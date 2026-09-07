@@ -1,0 +1,84 @@
+name: Build Windows
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    name: Build EMAP Windows (release + setup)
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Flutter version
+        run: flutter --version
+
+      - name: Enable symlinks (plugin support on Windows)
+        run: |
+          git config --global core.symlinks true
+          git config --global core.fileMode false
+
+      - name: Pub get
+        run: flutter pub get
+
+      - name: Build Windows release
+        run: flutter build windows --release
+
+      - name: Upload build log/article (debug info)
+        if: failure()
+        run: echo "Build failed; see logs above"
+
+      # ---- ZIP portable ----
+      - name: Package ZIP
+        shell: pwsh
+        run: |
+          $release = "build\windows\x64\runner\Release"
+          if (-not (Test-Path $release)) {
+            # fallback to x64 bits location
+            $release = Get-ChildItem -Path "build\windows" -Recurse -Directory -Filter "Release" | Select-Object -First 1
+            $release = $release.FullName
+          }
+          Write-Host "Release dir: $release"
+          Compress-Archive -Path "$release\*" -DestinationPath "EMAP_Certificados_windows.zip" -Force
+          Get-ChildItem "EMAP_Certificados_windows.zip"
+
+      - name: Upload ZIP artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: EMAP-Certificados-windows
+          path: EMAP_Certificados_windows.zip
+
+      # ---- Inno Setup installer ----
+      - name: Install Inno Setup
+        shell: pwsh
+        run: |
+          choco install innosetup -y --no-progress
+          if (Get-Command iscc -ErrorAction SilentlyContinue) {
+            "ISCC_FOUND=$((Get-Command iscc).Source)" | Out-File -FilePath $env:GITHUB_ENV -Append
+          }
+
+      - name: Build installer
+        if: env.ISCC_FOUND != ''
+        shell: pwsh
+        run: |
+          $env:EMAP_RELEASE = (Resolve-Path "build\windows\x64\runner\Release").Path
+          iscc installer\emap_certificados.iss
+          Get-ChildItem installer\Output -ErrorAction SilentlyContinue
+
+      - name: Upload installer artifact
+        if: env.ISCC_FOUND != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: EMAP-Certificados-Setup
+          path: installer\Output\*.exe
