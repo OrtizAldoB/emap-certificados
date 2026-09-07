@@ -14,7 +14,7 @@ class PdfProcessingService {
       for (var i = 0; i < doc.pages.length; i++) {
         final page = doc.pages[i];
         final text = await page.loadText();
-        sb.writeln(text.fullText);
+        if (text != null) sb.writeln(text.fullText);
       }
       return sb.toString();
     } finally {
