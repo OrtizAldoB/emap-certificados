@@ -1,4 +1,4 @@
-#define MyAppName "EMAP - Sistema de Certificación de Aportaciones"
+#define MyAppName "EMAP - Extracción de Aportaciones (PDF)"
 #define MyAppVersion "1.0.0"
 #define MyAppPublisher "EMAP - Entidad Municipal de Aseo Potosí"
 #define MyAppExeName "emap.exe"
@@ -12,8 +12,8 @@ AppId={{B8C4E2A0-5B31-4A77-9C0E-2F6A1D5C3B9E}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
-DefaultDirName={autopf}\EMAP Certificados
-DefaultGroupName=EMAP Certificados
+DefaultDirName={autopf}\EMAP Aportaciones
+DefaultGroupName=EMAP Aportaciones
 UninstallDisplayIcon={app}\{#MyAppExeName}
 OutputDir=Output
 OutputBaseFilename=EMAP_Certificados_Setup

@@ -8,6 +8,8 @@ class ParsedPayment {
   String tipoMovimiento;
   double totalGanado;
   int diasTrabajados;
+  double aporteAfp;
+  double liquidoPagable;
   double cotizacionMensual;
   double aporteVoluntario;
   double aporteBeneficioSocial;
@@ -25,6 +27,8 @@ class ParsedPayment {
     this.tipoMovimiento = 'APORTE_LABORAL',
     this.totalGanado = 0,
     this.diasTrabajados = 0,
+    this.aporteAfp = 0,
+    this.liquidoPagable = 0,
     this.cotizacionMensual = 0,
     this.aporteVoluntario = 0,
     this.aporteBeneficioSocial = 0,
@@ -190,6 +194,8 @@ class PdfParser {
       tipoMovimiento: isCommission(block) ? 'COMISION' : 'APORTE_LABORAL',
       totalGanado: num(RegExp(r'(?:total\s+ganado|ingreso\s+cotizable|total\s+ganado\s+o\s+ingreso)[:\s]*([\d., ]+)', caseSensitive: false).firstMatch(block)?.group(1)),
       diasTrabajados: int.tryParse(RegExp(r'(?:^|\s)(\d{1,2})\s*(?:d[ií]as)?(?:\s|$)', caseSensitive: false).firstMatch(block)?.group(1) ?? '') ?? 0,
+      aporteAfp: num(RegExp(r'(?:aporte\s+)?(?:a\.?f\.?p\.?|afp)[:\s]*([\d., ]+)', caseSensitive: false).firstMatch(block)?.group(1)),
+      liquidoPagable: num(RegExp(r'(?:l[ií]quido\s+(?:pagable|a\s+pagar|neto)|neto\s+(?:a\s+)?(?:pagar|pagable)|liquido\s+pagado)[:\s]*([\d., ]+)', caseSensitive: false).firstMatch(block)?.group(1)),
       cotizacionMensual: num(RegExp(r'cotizaci[oó]n\s+mensual[:\s]*([\d., ]+)', caseSensitive: false).firstMatch(block)?.group(1)),
       aporteVoluntario: num(RegExp(r'aporte\s+voluntario[:\s]*([\d., ]+)', caseSensitive: false).firstMatch(block)?.group(1)),
       aporteBeneficioSocial: num(RegExp(r'(?:aporte\s+)?beneficio\s+social[:\s]*([\d., ]+)', caseSensitive: false).firstMatch(block)?.group(1)),

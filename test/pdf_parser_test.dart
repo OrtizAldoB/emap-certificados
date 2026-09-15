@@ -38,6 +38,26 @@ Feb-2026
       expect(m.anio, 2026);
     });
 
+    test('extrae aportes AFP y liquido pagable', () {
+      final texto = '''
+ESTADO DE AHORRO PREVISIONAL
+MOVIMIENTO
+ENTIDAD MUNICIPAL DE ASEO POTOSI
+Mar-2026
+Total ganado: 6.800,55
+Aporte AFP: 680,06
+Comision: 34,00
+Liquido pagable: 6.086,49
+Dias trabajados: 30
+''';
+      final r = PdfParser.parse(texto);
+      expect(r.movimientos, isNotEmpty);
+      final m = r.movimientos.first;
+      expect(m.aporteAfp, 680.06);
+      expect(m.liquidoPagable, 6086.49);
+      expect(m.diasTrabajados, 30);
+    });
+
     test('marca cobro de comision como COMISION', () {
       expect(PdfParser.isCommission('Cobro de comision Feb-2025'), isTrue);
       expect(PdfParser.isCommission('Aporte laboral normal'), isFalse);
