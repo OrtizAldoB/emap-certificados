@@ -62,15 +62,38 @@ class PdfParser {
   static String mesNombre(int mes) =>
       (mes >= 1 && mes <= 12) ? _mesesList[mes - 1] : '$mes';
 
-  /// Convierte "6.800,55" -> 6800.55 , "680,06" -> 680.06
+  /// Periodo de cotizacion dentro del texto de una fila: "Abr-2024".
+  static final RegExp _monthPeriodRe =
+      RegExp(r'\b([A-Za-z]{3,9})-(\d{4})\b', caseSensitive: false);
+
+  /// Fecha de pago: "15/05/2024".
+  static final RegExp _dateRe = RegExp(r'\b(\d{1,2})/(\d{1,2})/(\d{4})\b');
+
+  /// Token numerico: "5,817.67", "0.00", "-0.75".
+  static final RegExp _numTokenRe = RegExp(r'^-?[\d][\d.,]*$');
+
+  /// Busca numeros dentro de un texto: "-0.75 841.1268".
+  static final RegExp _numRe = RegExp(r'-?[\d][\d.,]*');
+
+  /// Convierte "6.800,55" -> 6800.55, "5,817.67" -> 5817.67,
+  /// "680,06" -> 680.06, "-0.75" -> -0.75.
   static double num(Object? s) {
     if (s == null) return 0;
     var t = s.toString().trim();
     t = t.replaceAll(RegExp(r'[^\d.,\-]'), '');
     if (t.isEmpty) return 0;
-    if (t.contains(',') && t.contains('.')) {
-      t = t.replaceAll('.', '').replaceAll(',', '.');
-    } else if (t.contains(',')) {
+    final lastComma = t.lastIndexOf(',');
+    final lastDot = t.lastIndexOf('.');
+    if (lastComma >= 0 && lastDot >= 0) {
+      // Ambos presentes: el separador decimal es el que aparece al final.
+      if (lastComma > lastDot) {
+        // decimal = coma, miles = punto: "6.800,55"
+        t = t.replaceAll('.', '').replaceAll(',', '.');
+      } else {
+        // decimal = punto, miles = coma: "5,817.67"
+        t = t.replaceAll(',', '');
+      }
+    } else if (lastComma >= 0) {
       t = t.replaceAll(',', '.');
     }
     return double.tryParse(t) ?? 0;
@@ -126,16 +149,56 @@ class PdfParser {
       'nombres': '', 'apellidos': '', 'ci': '', 'cua': '',
       'periodo': '', 'numero': '', 'fechaEmision': '',
     };
-    final cuaM = RegExp(r'(?:CUA|Cuenta\s+Única|cuenta\s+unica)[:\s#]*([A-Za-z0-9\-]{6,})', caseSensitive: false).firstMatch(joined);
-    if (cuaM != null) out['cua'] = cuaM.group(1)!.trim();
-    final ciM = RegExp(r'(?:C\.?I\.?|Cedula|Cédula|Documento\s+de\s+Identidad|Doc\.?\s*Identidad|N\.?\s*Doc)[:\s]*([0-9]{4,10})', caseSensitive: false).firstMatch(joined);
+
+    final nomM = RegExp(
+            r'Nombres\s+y\s+Apellidos:\s*([A-ZÑÁÉÍÓÚ0-9][A-ZÑÁÉÍÓÚ0-9 ]*)',
+            caseSensitive: false)
+        .firstMatch(joined);
+    if (nomM != null) {
+      final palabras = nomM
+          .group(1)!
+          .trim()
+          .split(RegExp(r'\s+'))
+          .where((w) => w.isNotEmpty)
+          .toList();
+      if (palabras.isNotEmpty) {
+        out['nombres'] =
+            palabras.length >= 2 ? '${palabras[0]} ${palabras[1]}' : palabras[0];
+        out['apellidos'] =
+            palabras.length > 2 ? palabras.sublist(2).join(' ') : '';
+      }
+    }
+
+    final ciM = RegExp(
+            r'(?:C\.?I\.?|Cedula|Cédula|Documento\s+de\s+Identidad|Doc\.?\s*Identidad|N\.?\s*Doc)[:\s]*(?:[A-ZÑ]+[\s\-]*)?(\d{4,12})',
+            caseSensitive: false)
+        .firstMatch(joined);
     if (ciM != null) out['ci'] = ciM.group(1)!.trim();
-    final numM = RegExp(r'(?:N[°º]?\.?\s*(?:de\s+)?(?:Estado|Ahorro)|Estado\s+de\s+Ahorro\s+N[°º]?\.?)[:\s#]*([0-9\-]{4,})', caseSensitive: false).firstMatch(joined);
+
+    final cuaM = RegExp(
+            r'(?:CUA|Cuenta\s+Única|cuenta\s+unica)[:\s#]*([A-Za-z0-9\-]{6,})',
+            caseSensitive: false)
+        .firstMatch(joined);
+    if (cuaM != null) out['cua'] = cuaM.group(1)!.trim();
+
+    final numM = RegExp(
+            r'\bdel\s+[Ee]stado\s+[Dd]e\s+[Aa]horro\s+([A-Za-z0-9\-]{8,})',
+            caseSensitive: false)
+        .firstMatch(joined);
     if (numM != null) out['numero'] = numM.group(1)!.trim();
-    final feM = RegExp(r'(?:Fecha\s+de\s+(?:Emision|Emisión)|F\.?\s*Emisi[oó]n|Emitido)[:\s]*(\d{1,2}[-/]\d{1,2}[-/]\d{2,4})', caseSensitive: false).firstMatch(joined);
+
+    final feM = RegExp(
+            r'Fecha\s+de\s+(?:Emisi[oó]n|Emision)[^\d]*(\d{1,2}[-/]\d{1,2}[-/]\d{2,4})',
+            caseSensitive: false)
+        .firstMatch(joined);
     if (feM != null) out['fechaEmision'] = parseDate(feM.group(1));
-    final perM = RegExp(r'(?:Periodo|Período)\s*(?:del?\s+)?([A-Za-z]{3,}[-/]\d{4})', caseSensitive: false).firstMatch(joined);
+
+    final perM = RegExp(
+            r'Periodo(?:\s+del\s+Estado\s+de\s+Ahorro)?\s*(\d{1,2}/\d{4}(?:\s*a\s+\d{1,2}/\d{4})?)',
+            caseSensitive: false)
+        .firstMatch(joined);
     if (perM != null) out['periodo'] = perM.group(1)!.trim();
+
     return out;
   }
 
@@ -207,23 +270,115 @@ class PdfParser {
     );
   }
 
-  static ParsedResult parse(String text) {
-    final lines = _normalizeLines(text);
-    final joined = lines.join('\n');
-    final asegurado = _extractAsegurado(lines);
+  /// Parsea una fila de la tabla de movimientos tal como la extrae el PDF.
+  ///
+  /// Formato real (cada celda sale unida por espacios, por fila):
+  ///   `"<Empleador> <Total Ganado> <Abr-2024> <15/05/2024> ` + 
+  ///   `<30> <cotiz> <vol> <benef> <comision> <total aportes> <valor cuota> <num cuotas>"`
+  ///
+  /// En los "Cobro de comision" el "Total Ganado" (y a veces "Dias trabajados")
+  /// salen vacios, por lo que se omiten columnas.
+  static ParsedPayment? _parseMovementLine(String line) {
+    final pm = _monthPeriodRe.firstMatch(line);
+    if (pm == null) return null;
+    final mes = _months[pm.group(1)!.toLowerCase().substring(0, 3)];
+    final anio = int.tryParse(pm.group(2)!);
+    if (mes == null || anio == null) return null;
 
-    final movIdx = lines.indexWhere((l) => RegExp(r'^movimiento', caseSensitive: false).hasMatch(l));
-    final section = movIdx >= 0 ? lines.sublist(movIdx) : lines;
+    final dms = _dateRe.allMatches(line, pm.end).toList();
+    if (dms.isEmpty) return null;
+    final dm = dms.first;
+    final dia = dm.group(1)!, mesNum = dm.group(2)!, anioDate = dm.group(3)!;
+    final fechaPago =
+        '$anioDate-${mesNum.padLeft(2, '0')}-${dia.padLeft(2, '0')}';
 
-    var movimientos = _splitMovementRows(section)
-        .map(_parseBlock)
-        .whereType<ParsedPayment>()
-        .where((m) => m.anio != 0)
+    final before = line.substring(0, pm.start).trim();
+    final after = line.substring(dm.end).trim();
+    if (before.isEmpty) return null;
+
+    final antes = before.split(RegExp(r'\s+'));
+    var employer = before;
+    var totalGanado = 0.0;
+    if (antes.isNotEmpty && _numTokenRe.hasMatch(antes.last)) {
+      totalGanado = num(antes.last);
+      employer = antes.sublist(0, antes.length - 1).join(' ');
+    }
+
+    final nums = _numRe
+        .allMatches(after)
+        .map((m) => num(m.group(0)!))
         .toList();
 
-    if (movimientos.isEmpty) {
-      final m = _parseBlock(joined);
-      if (m != null && m.anio != 0) movimientos.add(m);
+    var dias = 0;
+    var cotizacion = 0.0, voluntario = 0.0, beneficioSocial = 0.0;
+    var comision = 0.0, totalAportes = 0.0, valorCuota = 0.0, nroCuotas = 0.0;
+    if (nums.length >= 8) {
+      dias = nums[0].toInt();
+      cotizacion = nums[1];
+      voluntario = nums[2];
+      beneficioSocial = nums[3];
+      comision = nums[4];
+      totalAportes = nums[5];
+      valorCuota = nums[6];
+      nroCuotas = nums[7];
+    } else if (nums.length == 7) {
+      // "Cobro de comision": la columna "Dias trabajados" va vacia.
+      cotizacion = nums[0];
+      voluntario = nums[1];
+      beneficioSocial = nums[2];
+      comision = nums[3];
+      totalAportes = nums[4];
+      valorCuota = nums[5];
+      nroCuotas = nums[6];
+    } else {
+      return null;
+    }
+
+    return ParsedPayment(
+      empleador: employer.trim(),
+      mes: mes,
+      anio: anio,
+      tipoMovimiento: isCommission(line) ? 'COMISION' : 'APORTE_LABORAL',
+      totalGanado: totalGanado,
+      diasTrabajados: dias,
+      cotizacionMensual: cotizacion,
+      aporteVoluntario: voluntario,
+      aporteBeneficioSocial: beneficioSocial,
+      comision: comision,
+      totalAportes: totalAportes,
+      valorCuota: valorCuota,
+      totalNumeroCuotas: nroCuotas,
+      fechaPago: fechaPago,
+    );
+  }
+
+  static ParsedResult parse(String text) {
+    final lines = _normalizeLines(text);
+    final asegurado = _extractAsegurado(lines);
+
+    // Formato real: una linea por movimiento.
+    final porLinea =
+        lines.map(_parseMovementLine).whereType<ParsedPayment>().toList();
+
+    List<ParsedPayment> movimientos;
+    if (porLinea.isNotEmpty) {
+      movimientos =
+          porLinea.where((m) => m.tipoMovimiento != 'COMISION').toList();
+    } else {
+      // Respaldo: layout flexible por bloques (encabezados, palabras clave).
+      final joined = lines.join('\n');
+      final movIdx = lines
+          .indexWhere((l) => RegExp(r'^movimiento', caseSensitive: false).hasMatch(l));
+      final section = movIdx >= 0 ? lines.sublist(movIdx) : lines;
+      movimientos = _splitMovementRows(section)
+          .map(_parseBlock)
+          .whereType<ParsedPayment>()
+          .where((m) => m.anio != 0)
+          .toList();
+      if (movimientos.isEmpty) {
+        final m = _parseBlock(joined);
+        if (m != null && m.anio != 0) movimientos.add(m);
+      }
     }
 
     // Marcar como requiere revision aquellos sin total ganado.
