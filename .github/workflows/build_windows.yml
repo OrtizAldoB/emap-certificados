@@ -81,14 +81,22 @@ jobs:
         if: env.ISCC_FOUND != ''
         shell: pwsh
         run: |
-          $env:EMAP_RELEASE = (Resolve-Path "build\windows\x64\runner\Release").Path
+          $release = (Resolve-Path "build\windows\x64\runner\Release").Path
           $icon = (Resolve-Path "assets\logos\app_icon.ico").Path
+          $out = Join-Path (Get-Location) "installer\Output"
+          $env:EMAP_RELEASE = $release
           $env:EMAP_ICON = $icon
-          Write-Host "Release: $env:EMAP_RELEASE"
-          Write-Host "Icon: $icon"
+          $env:EMAP_OUTPUT = $out
+          Write-Host "EMAP_RELEASE=$release"
+          Write-Host "EMAP_ICON=$icon"
+          Write-Host "EMAP_OUTPUT=$out"
           iscc installer\emap_certificados.iss 2>&1 | Tee-Object -FilePath iscc.log
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          Get-ChildItem installer\Output -ErrorAction SilentlyContinue
+          $code = $LASTEXITCODE
+          Get-Content iscc.log | Write-Host
+          if ($code -ne 0) {
+            Write-Error "ISCC fallo con exit code $code. Log completo en el artefacto EMAP-installer-log."
+            exit $code
+          }
 
       - name: Upload installer log
         if: always() && env.ISCC_FOUND != ''
@@ -103,3 +111,4 @@ jobs:
         with:
           name: EMAP-Certificados-Setup
           path: installer\Output\*.exe
+          if-no-files-found: error

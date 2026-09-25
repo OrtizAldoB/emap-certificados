@@ -6,10 +6,16 @@
 #ifndef EMAPRelease
   #define EMAPRelease GetEnv("EMAP_RELEASE")
 #endif
-; Ruta al icono del instalador, inyectada desde el workflow por la variable EMAP_ICON.
-; ISCC no resuelve rutas relativas de forma fiable, por eso el workflow pasa la ruta absoluta.
+; Rutas absolutas inyectadas desde el workflow mediante EMAP_ICON y EMAP_OUTPUT.
+; ISCC no resuelve de forma fiable las rutas relativas (ni la base del script ni el CWD),
+; por eso el workflow pasa rutas absolutas. Compilando en local hay que exportarlas:
+;   $env:EMAP_ICON = (Resolve-Path .\assets\logos\app_icon.ico).Path
+;   $env:EMAP_OUTPUT = (Join-Path (Get-Location) 'installer\Output')
 #ifndef EMAPIcon
-  #define EMAPIcon "..\assets\logos\app_icon.ico"
+  #define EMAPIcon GetEnv("EMAP_ICON")
+#endif
+#ifndef EMAPOutput
+  #define EMAPOutput GetEnv("EMAP_OUTPUT")
 #endif
 
 [Setup]
@@ -28,7 +34,7 @@ VersionInfoLegalCopyright=Copyright (C) 2026 {#MyAppPublisher}
 DefaultDirName={autopf}\EMAP Aportaciones
 DefaultGroupName=EMAP Aportaciones
 UninstallDisplayIcon={app}\{#MyAppExeName}
-OutputDir=Output
+OutputDir={#EMAPOutput}
 OutputBaseFilename=EMAP_Certificados_Setup
 Compression=lzma2
 SolidCompression=yes
