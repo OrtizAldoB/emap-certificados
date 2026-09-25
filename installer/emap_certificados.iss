@@ -6,11 +6,16 @@
 #ifndef EMAPRelease
   #define EMAPRelease GetEnv("EMAP_RELEASE")
 #endif
+; Ruta al icono del instalador, inyectada desde el workflow por la variable EMAP_ICON.
+; ISCC no resuelve rutas relativas de forma fiable, por eso el workflow pasa la ruta absoluta.
+#ifndef EMAPIcon
+  #define EMAPIcon "..\assets\logos\app_icon.ico"
+#endif
 
 [Setup]
 AppId={{B8C4E2A0-5B31-4A77-9C0E-2F6A1D5C3B9E}
 AppName={#MyAppName}
-SetupIconFile=..\assets\logos\app_icon.ico
+SetupIconFile={#EMAPIcon}
 AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
 AppPublisherURL=https://github.com/OrtizAldoB/emap-certificados

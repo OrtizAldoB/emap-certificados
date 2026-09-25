@@ -82,8 +82,20 @@ jobs:
         shell: pwsh
         run: |
           $env:EMAP_RELEASE = (Resolve-Path "build\windows\x64\runner\Release").Path
-          iscc installer\emap_certificados.iss
+          $icon = (Resolve-Path "assets\logos\app_icon.ico").Path
+          $env:EMAP_ICON = $icon
+          Write-Host "Release: $env:EMAP_RELEASE"
+          Write-Host "Icon: $icon"
+          iscc installer\emap_certificados.iss 2>&1 | Tee-Object -FilePath iscc.log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           Get-ChildItem installer\Output -ErrorAction SilentlyContinue
+
+      - name: Upload installer log
+        if: always() && env.ISCC_FOUND != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: EMAP-installer-log
+          path: iscc.log
 
       - name: Upload installer artifact
         if: env.ISCC_FOUND != ''
