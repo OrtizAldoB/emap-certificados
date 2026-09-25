@@ -1,7 +1,14 @@
-import 'package:flutter_test/flutter_test.dart';
+import 'dart:convert';
+
+import 'package:archive/archive.dart';
+import 'package:emap/models/registro_extraido.dart';
+import 'package:emap/services/export_service.dart';
 import 'package:emap/utils/pdf_parser.dart';
+import 'package:excel/excel.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   group('PdfParser', () {
     test('convierte numeros latinos correctamente', () {
       expect(PdfParser.num('6.800,55'), 6800.55);
@@ -116,6 +123,106 @@ Dias trabajados: 30
     test('marca cobro de comision como COMISION', () {
       expect(PdfParser.isCommission('Cobro de comision Feb-2025'), isTrue);
       expect(PdfParser.isCommission('Aporte laboral normal'), isFalse);
+    });
+  });
+
+  group('RegistroExtraido', () {
+    test('muestra el nombre del mes', () {
+      expect(RegistroExtraido(mes: 1, anio: 2026).mesNombre, 'Enero');
+      expect(RegistroExtraido(mes: 12, anio: 2026).mesNombre, 'Diciembre');
+    });
+
+    test('limita los días trabajados a 30', () {
+      final registro = RegistroExtraido(mes: 2, anio: 2026, diasTrabajados: 45);
+      final historico = RegistroExtraido.fromJson({
+        'mes': 2,
+        'anio': 2026,
+        'diasTrabajados': 31,
+      });
+
+      expect(registro.diasTrabajados, 30);
+      expect(historico.diasTrabajados, 30);
+    });
+  });
+
+  group('Resumen de aportes', () {
+    test('acumula días entre meses hasta completar 30', () {
+      final resumen = ExportService.calcularResumenAportes([
+        RegistroExtraido(mes: 1, anio: 2026, diasTrabajados: 27),
+        RegistroExtraido(mes: 2, anio: 2026, diasTrabajados: 27),
+        RegistroExtraido(mes: 3, anio: 2026, diasTrabajados: 6),
+      ]);
+
+      expect(resumen.cotizaciones, 2);
+      expect(resumen.diasPendientes, 0);
+      expect(resumen.anios.single.cotizaciones, 2);
+    });
+
+    test('muestra como pendientes los días que no completan 30', () {
+      final resumen = ExportService.calcularResumenAportes([
+        RegistroExtraido(mes: 12, anio: 2025, diasTrabajados: 27),
+      ]);
+
+      expect(resumen.cotizaciones, 0);
+      expect(resumen.diasPendientes, 27);
+      expect(resumen.anios.single.diasPendientes, 27);
+    });
+
+    test('arrastra días pendientes al siguiente año', () {
+      final resumen = ExportService.calcularResumenAportes([
+        RegistroExtraido(mes: 1, anio: 2026, diasTrabajados: 3),
+        RegistroExtraido(mes: 12, anio: 2025, diasTrabajados: 27),
+      ]);
+
+      expect(resumen.cotizaciones, 1);
+      expect(resumen.diasPendientes, 0);
+      expect(resumen.anios[0].anio, 2025);
+      expect(resumen.anios[0].cotizaciones, 0);
+      expect(resumen.anios[0].diasPendientes, 27);
+      expect(resumen.anios[1].anio, 2026);
+      expect(resumen.anios[1].cotizaciones, 1);
+    });
+
+    test('exporta meses como nombres e incluye los logos', () async {
+      final bytes = await ExportService.generarXlsxBytes([
+        RegistroExtraido(
+          nombres: 'PRUEBA',
+          ci: '1234567',
+          mes: 1,
+          anio: 2026,
+          diasTrabajados: 27,
+        ),
+      ]);
+      final archivo = ZipDecoder().decodeBytes(bytes);
+      final excel = Excel.decodeBytes(bytes);
+      final mes =
+          excel['Certificado']
+                  .cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: 9))
+                  .value
+              as TextCellValue;
+
+      expect(mes.value.text, 'Enero');
+      expect(archivo.findFile('xl/media/logo1.png'), isNotNull);
+      expect(archivo.findFile('xl/media/logo2.png'), isNotNull);
+      expect(archivo.findFile('xl/drawings/drawing1.xml'), isNotNull);
+      expect(archivo.findFile('xl/drawings/drawing2.xml'), isNull);
+      expect(
+        archivo.findFile('xl/drawings/_rels/drawing1.xml.rels'),
+        isNotNull,
+      );
+
+      String readXml(String path) {
+        return utf8.decode(archivo.findFile(path)!.content as List<int>);
+      }
+
+      final sheetXml = readXml('xl/worksheets/sheet1.xml');
+      final drawingXml = readXml('xl/drawings/drawing1.xml');
+      final drawingRels = readXml('xl/drawings/_rels/drawing1.xml.rels');
+      expect(RegExp(r'<drawing\b').allMatches(sheetXml).length, 1);
+      expect(drawingXml, contains('r:embed="rIdLogo1"'));
+      expect(drawingXml, contains('r:embed="rIdLogo2"'));
+      expect(drawingRels, contains('Target="../media/logo1.png"'));
+      expect(drawingRels, contains('Target="../media/logo2.png"'));
     });
   });
 }

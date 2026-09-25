@@ -10,32 +10,71 @@ class AppTheme {
   static const Color surface = Colors.white;
 
   static ThemeData light() {
+    final colorScheme = ColorScheme.fromSeed(
+      seedColor: primary,
+      primary: primary,
+      secondary: accent,
+      surface: surface,
+    );
+
     return ThemeData(
       useMaterial3: true,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: primary,
-        primary: primary,
-        secondary: accent,
-        surface: surface,
-      ),
+      colorScheme: colorScheme,
       scaffoldBackgroundColor: background,
       appBarTheme: const AppBarTheme(
-        backgroundColor: primary,
+        backgroundColor: primaryDark,
         foregroundColor: Colors.white,
         elevation: 0,
+        centerTitle: false,
+        surfaceTintColor: Colors.transparent,
+        titleTextStyle: TextStyle(
+          color: Colors.white,
+          fontSize: 18,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.2,
+        ),
       ),
-      cardTheme: const CardThemeData(
-        elevation: 1,
+      cardTheme: CardThemeData(
+        elevation: 0,
         color: surface,
-        margin: EdgeInsets.all(8),
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+          side: BorderSide(color: const Color(0xFFE1E8E1)),
+        ),
       ),
       inputDecorationTheme: const InputDecorationTheme(
         border: OutlineInputBorder(),
         isDense: true,
       ),
-      dataTableTheme: DataTableThemeData(
-        headingRowColor: WidgetStatePropertyAll(primary.withValues(alpha: 0.08)),
-        columnSpacing: 20,
+      dataTableTheme: const DataTableThemeData(
+        headingRowColor: WidgetStatePropertyAll(Color(0xFFEAF2E8)),
+        headingTextStyle: TextStyle(
+          color: Color(0xFF16351C),
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+        ),
+        dataTextStyle: TextStyle(color: Color(0xFF253129), fontSize: 12),
+        dividerThickness: 0.5,
+        columnSpacing: 24,
+        horizontalMargin: 16,
+      ),
+      dividerTheme: const DividerThemeData(
+        color: Color(0xFFE6ECE6),
+        thickness: 1,
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          textStyle: const TextStyle(fontWeight: FontWeight.w700),
+        ),
+      ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
       navigationRailTheme: const NavigationRailThemeData(
         backgroundColor: sidebar,
@@ -43,7 +82,10 @@ class AppTheme {
         selectedIconTheme: IconThemeData(color: Colors.white),
         unselectedIconTheme: IconThemeData(color: Colors.white60),
         selectedLabelTextStyle: TextStyle(color: Colors.white, fontSize: 13),
-        unselectedLabelTextStyle: TextStyle(color: Colors.white70, fontSize: 13),
+        unselectedLabelTextStyle: TextStyle(
+          color: Colors.white70,
+          fontSize: 13,
+        ),
       ),
     );
   }

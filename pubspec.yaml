@@ -9,6 +9,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  archive: ^3.6.1
   file_picker: ^8.1.4
   excel: ^4.0.6
   path_provider: ^2.1.5
@@ -24,3 +25,5 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/logos/

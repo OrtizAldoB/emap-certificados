@@ -1,6 +1,6 @@
 #define MyAppName "EMAP - Extracción de Aportaciones (PDF)"
 #define MyAppVersion "1.0.0"
-#define MyAppPublisher "EMAP - Entidad Municipal de Aseo Potosí"
+#define MyAppPublisher "Aldo Ortiz UPDS"
 #define MyAppExeName "emap.exe"
 ; Ruta a la carpeta Release, inyectada desde el workflow por la variable EMAP_RELEASE.
 #ifndef EMAPRelease
