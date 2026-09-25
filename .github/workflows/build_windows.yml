@@ -95,7 +95,7 @@ jobs:
           Get-Content iscc.log | Write-Host
           if ($code -ne 0) {
             $tail = (Get-Content iscc.log -Tail 30) -join "`n"
-            Write-Error "ISCC fallo con exit code $code. Log completo en el artefacto EMAP-installer-log. Salida:`n$tail"
+            Write-Host "::error title=ISCC fallo::exit $code`n$tail"
             exit $code
           }
 
