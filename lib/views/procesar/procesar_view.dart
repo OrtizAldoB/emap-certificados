@@ -161,75 +161,96 @@ class _ProcesarViewState extends State<ProcesarView> {
     );
     final resumen = ExportService.calcularResumenAportes(_registros);
 
-    return Scaffold(
-      appBar: AppBar(
-        toolbarHeight: 72,
-        titleSpacing: 20,
-        title: Row(
-          children: [
-            _buildLogo('logo1.png'),
-            const SizedBox(width: 8),
-            _buildLogo('logo2.png'),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('EMAP · Certificados de aportes'),
-                  Text(
-                    'Extracción y consolidación de Estados de Ahorro',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.72),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w400,
-                    ),
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        _buildBackground(),
+        Scaffold(
+          backgroundColor: Colors.transparent,
+          appBar: AppBar(
+            backgroundColor: AppTheme.primaryDark.withValues(alpha: 0.92),
+            toolbarHeight: 72,
+            titleSpacing: 20,
+            title: Row(
+              children: [
+                _buildLogo(),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('EMAP · Certificados de aportes'),
+                      Text(
+                        'Extracción y consolidación de Estados de Ahorro',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.72),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
+            actions: [
+              if (_registros.isNotEmpty)
+                FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: AppTheme.primaryDark,
+                  ),
+                  onPressed: _procesando ? null : _exportarExcel,
+                  icon: const Icon(Icons.table_chart_outlined, size: 19),
+                  label: const Text('EXPORTAR EXCEL'),
+                ),
+              if (_registros.isNotEmpty)
+                IconButton(
+                  icon: const Icon(Icons.delete_outline),
+                  tooltip: 'Limpiar historial',
+                  onPressed: _procesando ? null : _limpiar,
+                ),
+              const SizedBox(width: 14),
+            ],
+          ),
+          body: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+            child: Column(
+              children: [
+                _buildHeader(totalLiquido, resumen),
+                const SizedBox(height: 14),
+                _buildDropZone(),
+                const SizedBox(height: 14),
+                Expanded(
+                  child: _registros.isEmpty
+                      ? _buildEmptyState()
+                      : _buildResults(totalLiquido, resumen),
+                ),
+              ],
+            ),
+          ),
         ),
-        actions: [
-          if (_registros.isNotEmpty)
-            FilledButton.icon(
-              style: FilledButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: AppTheme.primaryDark,
-              ),
-              onPressed: _procesando ? null : _exportarExcel,
-              icon: const Icon(Icons.table_chart_outlined, size: 19),
-              label: const Text('EXPORTAR EXCEL'),
-            ),
-          if (_registros.isNotEmpty)
-            IconButton(
-              icon: const Icon(Icons.delete_outline),
-              tooltip: 'Limpiar historial',
-              onPressed: _procesando ? null : _limpiar,
-            ),
-          const SizedBox(width: 14),
-        ],
-      ),
-      body: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
-        child: Column(
-          children: [
-            _buildHeader(totalLiquido, resumen),
-            const SizedBox(height: 14),
-            _buildDropZone(),
-            const SizedBox(height: 14),
-            Expanded(
-              child: _registros.isEmpty
-                  ? _buildEmptyState()
-                  : _buildResults(totalLiquido, resumen),
-            ),
-          ],
-        ),
-      ),
+      ],
     );
   }
 
-  Widget _buildLogo(String fileName) {
+  Widget _buildBackground() {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        const ColoredBox(color: AppTheme.background),
+        Image.asset(
+          'assets/logos/logo1.png',
+          fit: BoxFit.cover,
+          errorBuilder: (_, _, _) => const SizedBox.shrink(),
+        ),
+        ColoredBox(color: Colors.white.withValues(alpha: 0.84)),
+      ],
+    );
+  }
+
+  Widget _buildLogo() {
     return Container(
       width: 42,
       height: 42,
@@ -246,7 +267,7 @@ class _ProcesarViewState extends State<ProcesarView> {
         ],
       ),
       child: Image.asset(
-        'assets/logos/$fileName',
+        'assets/logos/logo1.png',
         fit: BoxFit.contain,
         errorBuilder: (_, _, _) =>
             const Icon(Icons.account_balance_outlined, color: AppTheme.primary),

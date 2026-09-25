@@ -1,5 +1,5 @@
 #define MyAppName "EMAP - Extracción de Aportaciones (PDF)"
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "1.0.1"
 #define MyAppPublisher "Aldo Ortiz UPDS"
 #define MyAppExeName "emap.exe"
 ; Ruta a la carpeta Release, inyectada desde el workflow por la variable EMAP_RELEASE.
@@ -10,8 +10,16 @@
 [Setup]
 AppId={{B8C4E2A0-5B31-4A77-9C0E-2F6A1D5C3B9E}
 AppName={#MyAppName}
+SetupIconFile=..\assets\logos\app_icon.ico
 AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
+AppPublisherURL=https://github.com/OrtizAldoB/emap-certificados
+VersionInfoVersion={#MyAppVersion}
+VersionInfoCompany={#MyAppPublisher}
+VersionInfoDescription={#MyAppName}
+VersionInfoProductName={#MyAppName}
+VersionInfoProductVersion={#MyAppVersion}
+VersionInfoLegalCopyright=Copyright (C) 2026 {#MyAppPublisher}
 DefaultDirName={autopf}\EMAP Aportaciones
 DefaultGroupName=EMAP Aportaciones
 UninstallDisplayIcon={app}\{#MyAppExeName}

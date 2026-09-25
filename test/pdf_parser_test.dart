@@ -183,7 +183,7 @@ Dias trabajados: 30
       expect(resumen.anios[1].cotizaciones, 1);
     });
 
-    test('exporta meses como nombres e incluye los logos', () async {
+    test('exporta meses como nombres e incluye el logo1', () async {
       final bytes = await ExportService.generarXlsxBytes([
         RegistroExtraido(
           nombres: 'PRUEBA',
@@ -203,7 +203,7 @@ Dias trabajados: 30
 
       expect(mes.value.text, 'Enero');
       expect(archivo.findFile('xl/media/logo1.png'), isNotNull);
-      expect(archivo.findFile('xl/media/logo2.png'), isNotNull);
+      expect(archivo.findFile('xl/media/logo2.png'), isNull);
       expect(archivo.findFile('xl/drawings/drawing1.xml'), isNotNull);
       expect(archivo.findFile('xl/drawings/drawing2.xml'), isNull);
       expect(
@@ -220,9 +220,9 @@ Dias trabajados: 30
       final drawingRels = readXml('xl/drawings/_rels/drawing1.xml.rels');
       expect(RegExp(r'<drawing\b').allMatches(sheetXml).length, 1);
       expect(drawingXml, contains('r:embed="rIdLogo1"'));
-      expect(drawingXml, contains('r:embed="rIdLogo2"'));
+      expect(drawingXml, isNot(contains('r:embed="rIdLogo2"')));
       expect(drawingRels, contains('Target="../media/logo1.png"'));
-      expect(drawingRels, contains('Target="../media/logo2.png"'));
+      expect(drawingRels, isNot(contains('Target="../media/logo2.png"')));
     });
   });
 }

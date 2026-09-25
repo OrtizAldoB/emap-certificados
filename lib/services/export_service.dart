@@ -521,12 +521,6 @@ class ExportService {
         columnaDesde: 0,
         columnaHasta: 2,
       ),
-      (
-        ruta: 'assets/logos/logo2.png',
-        archivo: 'xl/media/logo2.png',
-        columnaDesde: 4,
-        columnaHasta: 6,
-      ),
     ];
 
     final logos =

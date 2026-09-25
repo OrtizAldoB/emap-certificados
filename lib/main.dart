@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -15,6 +17,9 @@ Future<void> main() async {
     title: 'EMAP - Extracción de Aportaciones (PDF)',
   );
   await windowManager.waitUntilReadyToShow(windowOptions, () async {
+    if (Platform.isWindows) {
+      await windowManager.setIcon('assets/logos/app_icon.ico');
+    }
     await windowManager.show();
     await windowManager.focus();
   });
