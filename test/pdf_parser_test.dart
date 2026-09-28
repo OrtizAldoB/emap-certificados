@@ -21,6 +21,14 @@ void main() {
       expect(PdfParser.num('-0.75'), -0.75);
     });
 
+    test('convierte enteros con separador de miles sin inventar decimales', () {
+      expect(PdfParser.num('6.800'), 6800.0);
+      expect(PdfParser.num('5.028'), 5028.0);
+      expect(PdfParser.num('1.242.177,44'), 1242177.44);
+      expect(PdfParser.num('1,200,000'), 1200000.0);
+      expect(PdfParser.num('4.576'), 4576.0);
+    });
+
     test('detecta periodo Feb-2026', () {
       final p = PdfParser.parsePeriod('Feb-2026');
       expect(p, isNotNull);
@@ -168,19 +176,20 @@ Dias trabajados: 30
       expect(resumen.anios.single.diasPendientes, 27);
     });
 
-    test('arrastra días pendientes al siguiente año', () {
+    test('no arrastra los días pendientes entre años', () {
       final resumen = ExportService.calcularResumenAportes([
         RegistroExtraido(mes: 1, anio: 2026, diasTrabajados: 3),
         RegistroExtraido(mes: 12, anio: 2025, diasTrabajados: 27),
       ]);
 
-      expect(resumen.cotizaciones, 1);
-      expect(resumen.diasPendientes, 0);
+      expect(resumen.cotizaciones, 0);
+      expect(resumen.diasPendientes, 3);
       expect(resumen.anios[0].anio, 2025);
       expect(resumen.anios[0].cotizaciones, 0);
       expect(resumen.anios[0].diasPendientes, 27);
       expect(resumen.anios[1].anio, 2026);
-      expect(resumen.anios[1].cotizaciones, 1);
+      expect(resumen.anios[1].cotizaciones, 0);
+      expect(resumen.anios[1].diasPendientes, 3);
     });
 
     test('exporta meses como nombres e incluye el logo1', () async {

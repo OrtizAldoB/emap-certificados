@@ -76,12 +76,24 @@ class PdfParser {
   static final RegExp _numRe = RegExp(r'-?[\d][\d.,]*');
 
   /// Convierte "6.800,55" -> 6800.55, "5,817.67" -> 5817.67,
-  /// "680,06" -> 680.06, "-0.75" -> -0.75.
+  /// "6.800" -> 6800, "5,817" -> 5817, "680,06" -> 680.06, "-0.75" -> -0.75.
   static double num(Object? s) {
     if (s == null) return 0;
     var t = s.toString().trim();
     t = t.replaceAll(RegExp(r'[^\d.,\-]'), '');
     if (t.isEmpty) return 0;
+
+    // Miles con punto y (opcionalmente) decimales con coma: "6.800", "6.800,55".
+    if (RegExp(r'^-?\d+(?:\.\d{3})+(,\d+)?$').hasMatch(t)) {
+      t = t.replaceAll('.', '').replaceAll(',', '.');
+      return double.tryParse(t) ?? 0;
+    }
+    // Miles con coma y (opcionalmente) decimales con punto: "5,817", "5,817.67".
+    if (RegExp(r'^-?\d+(?:,\d{3})+(\.\d+)?$').hasMatch(t)) {
+      t = t.replaceAll(',', '');
+      return double.tryParse(t) ?? 0;
+    }
+
     final lastComma = t.lastIndexOf(',');
     final lastDot = t.lastIndexOf('.');
     if (lastComma >= 0 && lastDot >= 0) {

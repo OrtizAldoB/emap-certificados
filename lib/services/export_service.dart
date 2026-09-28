@@ -423,6 +423,8 @@ class ExportService {
     return excel;
   }
 
+  /// Calcula el resumen por anio SIN arrastrar dias pendientes entre anios:
+  /// cada anio se mide de forma independiente (30 dias = 1 cotizacion).
   static ResumenCertificadoAportes calcularResumenAportes(
     List<RegistroExtraido> registros,
   ) {
@@ -439,22 +441,23 @@ class ExportService {
           .toList();
       if (mesesConDias.isEmpty) continue;
 
-      var cotizacionesAnio = 0;
+      var diasAnio = 0;
       for (final mes in mesesConDias) {
-        final dias = agrupados[anio]![mes]!.diasTrabajados;
-        final acumulado = pendientes + dias;
-        cotizacionesAnio += acumulado ~/ 30;
-        pendientes = acumulado % 30;
+        diasAnio += agrupados[anio]![mes]!.diasTrabajados;
       }
 
+      final cotizacionesAnio = diasAnio ~/ 30;
+      final pendientesAnio = diasAnio % 30;
+
       totalCotizaciones += cotizacionesAnio;
+      pendientes = pendientesAnio;
       filas.add(
         ResumenAnualAportes(
           anio: anio,
           desde: RegistroExtraido.nombreMes(mesesConDias.first),
           hasta: RegistroExtraido.nombreMes(mesesConDias.last),
           cotizaciones: cotizacionesAnio,
-          diasPendientes: pendientes,
+          diasPendientes: pendientesAnio,
         ),
       );
     }
@@ -507,6 +510,7 @@ class ExportService {
               ? 30
               : prev.diasTrabajados + r.diasTrabajados,
           fechaProceso: r.fechaProceso,
+          requiereRevision: prev.requiereRevision || r.requiereRevision,
         );
       }
     }

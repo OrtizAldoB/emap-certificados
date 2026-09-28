@@ -13,6 +13,7 @@ class RegistroExtraido {
   double liquidoPagable;
   int diasTrabajados;
   String fechaProceso;
+  bool requiereRevision;
 
   RegistroExtraido({
     this.archivo = '',
@@ -27,6 +28,7 @@ class RegistroExtraido {
     this.liquidoPagable = 0,
     int diasTrabajados = 0,
     this.fechaProceso = '',
+    this.requiereRevision = false,
   }) : diasTrabajados = _normalizarDias(diasTrabajados);
 
   Map<String, dynamic> toJson() => {
@@ -42,6 +44,7 @@ class RegistroExtraido {
     'liquidoPagable': liquidoPagable,
     'diasTrabajados': diasTrabajados,
     'fechaProceso': fechaProceso,
+    'requiereRevision': requiereRevision,
   };
 
   factory RegistroExtraido.fromJson(Map<String, dynamic> j) => RegistroExtraido(
@@ -57,6 +60,7 @@ class RegistroExtraido {
     liquidoPagable: (j['liquidoPagable'] as num?)?.toDouble() ?? 0,
     diasTrabajados: (j['diasTrabajados'] as num?)?.toInt() ?? 0,
     fechaProceso: j['fechaProceso'] ?? '',
+    requiereRevision: j['requiereRevision'] == true,
   );
 
   static String nombreMes(int mes) {

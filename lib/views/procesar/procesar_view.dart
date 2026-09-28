@@ -81,6 +81,9 @@ class _ProcesarViewState extends State<ProcesarView> {
         final fecha = DateTime.now();
         for (final movimiento in resultado.movimientos) {
           final aportesAfp = movimiento.totalGanado * 0.1271;
+          final coincidePdf = movimiento.cotizacionMensual <= 0 ||
+              (aportesAfp - movimiento.cotizacionMensual).abs() <= 0.5 ||
+              (aportesAfp / movimiento.cotizacionMensual - 1).abs() <= 0.02;
           nuevos.add(
             RegistroExtraido(
               archivo: item.nombre,
@@ -98,6 +101,8 @@ class _ProcesarViewState extends State<ProcesarView> {
               diasTrabajados: movimiento.diasTrabajados,
               fechaProceso:
                   '${fecha.year}-${fecha.month.toString().padLeft(2, '0')}-${fecha.day.toString().padLeft(2, '0')}',
+              requiereRevision: movimiento.requiereRevision ||
+                  !coincidePdf,
             ),
           );
         }
@@ -502,6 +507,7 @@ class _ProcesarViewState extends State<ProcesarView> {
                     DataColumn(label: Text('APORTES AFP')),
                     DataColumn(label: Text('LÍQUIDO PAGABLE')),
                     DataColumn(label: Text('DÍAS')),
+                    DataColumn(label: Text('ESTADO')),
                   ],
                   rows: _registros.map((registro) {
                     return DataRow(
@@ -530,6 +536,29 @@ class _ProcesarViewState extends State<ProcesarView> {
                         DataCell(Text(_fmtNum(registro.aportesAfp))),
                         DataCell(Text(_fmtNum(registro.liquidoPagable))),
                         DataCell(Text('${registro.diasTrabajados}')),
+                        DataCell(
+                          registro.requiereRevision
+                              ? const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.warning_amber_rounded,
+                                      color: Colors.deepOrange,
+                                      size: 16,
+                                    ),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      'REVISAR',
+                                      style: TextStyle(
+                                        color: Colors.deepOrange,
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              : const Text('OK'),
+                        ),
                       ],
                     );
                   }).toList(),
