@@ -1,6 +1,11 @@
 /// Fila resultado de extraer un Estado de Ahorro Previsional desde un PDF.
 /// Contiene exactamente los campos que el usuario solicito exportar.
 class RegistroExtraido {
+  static const String empleadorEmap = 'ENTIDAD MUNICIPAL DE ASEO POTOSI';
+
+  bool get esEmpleadorEmap =>
+      empleador.trim().toUpperCase() == empleadorEmap;
+
   String archivo;
   String ci;
   String nombres;

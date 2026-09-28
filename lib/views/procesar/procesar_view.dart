@@ -73,17 +73,25 @@ class _ProcesarViewState extends State<ProcesarView> {
       final nuevos = <RegistroExtraido>[];
       for (final item in archivos) {
         final resultado = await _pdfService.parsePdfFile(item.archivo.path);
-        if (resultado.movimientos.isEmpty) {
-          _error += '• ${item.nombre}: no se identificaron movimientos.\n';
+        final movimientos = resultado.movimientos
+            .where(
+              (m) =>
+                  m.empleador.trim().toUpperCase() ==
+                  RegistroExtraido.empleadorEmap,
+            )
+            .toList();
+        if (movimientos.isEmpty) {
+          _error += '• ${item.nombre}: no se identificaron movimientos de '
+              'ENTIDAD MUNICIPAL DE ASEO POTOSI.\n';
           continue;
         }
         final asegurado = resultado.asegurado;
         final fecha = DateTime.now();
-        for (final movimiento in resultado.movimientos) {
+        for (final movimiento in movimientos) {
           final aportesAfp = movimiento.totalGanado * 0.1271;
-          final coincidePdf = movimiento.cotizacionMensual <= 0 ||
-              (aportesAfp - movimiento.cotizacionMensual).abs() <= 0.5 ||
-              (aportesAfp / movimiento.cotizacionMensual - 1).abs() <= 0.02;
+          final cotizacionPdf = movimiento.cotizacionMensual;
+          final integra = cotizacionPdf <= 0 ||
+              (cotizacionPdf - movimiento.totalGanado * 0.10).abs() <= 0.5;
           nuevos.add(
             RegistroExtraido(
               archivo: item.nombre,
@@ -101,8 +109,7 @@ class _ProcesarViewState extends State<ProcesarView> {
               diasTrabajados: movimiento.diasTrabajados,
               fechaProceso:
                   '${fecha.year}-${fecha.month.toString().padLeft(2, '0')}-${fecha.day.toString().padLeft(2, '0')}',
-              requiereRevision: movimiento.requiereRevision ||
-                  !coincidePdf,
+              requiereRevision: movimiento.requiereRevision || !integra,
             ),
           );
         }

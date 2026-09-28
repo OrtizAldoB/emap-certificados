@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:archive/archive.dart';
 import 'package:emap/models/registro_extraido.dart';
@@ -132,6 +133,40 @@ Dias trabajados: 30
       expect(PdfParser.isCommission('Cobro de comision Feb-2025'), isTrue);
       expect(PdfParser.isCommission('Aporte laboral normal'), isFalse);
     });
+
+    test('parsea el texto real del PDF de prueba sin inventar datos', () {
+      final texto = File(
+        'test/fixtures/certificado2.txt',
+      ).readAsStringSync();
+      final r = PdfParser.parse(texto);
+
+      expect(r.movimientos, hasLength(47));
+
+      final julio = r.movimientos
+          .where((m) => m.anio == 2023 && m.mes == 7)
+          .toList();
+      expect(julio, hasLength(2));
+      expect(julio[0].totalGanado, 551.13);
+      expect(julio[0].diasTrabajados, 7);
+      expect(julio[0].cotizacionMensual, 55.11);
+      expect(julio[1].totalGanado, 1942.44);
+      expect(julio[1].diasTrabajados, 17);
+      expect(julio[1].cotizacionMensual, 194.24);
+
+      final enero2024 = r.movimientos
+          .where((m) => m.anio == 2024 && m.mes == 1)
+          .toList();
+      expect(enero2024, hasLength(2));
+      expect(enero2024[0].totalGanado, 3642.08);
+      expect(enero2024[1].totalGanado, 108.92);
+
+      final abril2023 = r.movimientos
+          .where((m) => m.anio == 2023 && m.mes == 4)
+          .toList();
+      expect(abril2023, hasLength(1));
+      expect(abril2023.single.totalGanado, 1987.50);
+      expect(abril2023.single.diasTrabajados, 25);
+    });
   });
 
   group('RegistroExtraido', () {
@@ -197,6 +232,7 @@ Dias trabajados: 30
         RegistroExtraido(
           nombres: 'PRUEBA',
           ci: '1234567',
+          empleador: 'ENTIDAD MUNICIPAL DE ASEO POTOSI',
           mes: 1,
           anio: 2026,
           diasTrabajados: 27,

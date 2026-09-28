@@ -73,6 +73,10 @@ class ExportService {
   }
 
   static Excel _buildExcel(List<RegistroExtraido> registros) {
+    final solo = registros
+        .where((r) => r.esEmpleadorEmap)
+        .toList();
+
     final excel = Excel.createExcel();
     final defSheet = excel.getDefaultSheet();
     if (defSheet != null) excel.rename(defSheet, 'Certificado');
@@ -86,8 +90,8 @@ class ExportService {
     sheet.setColumnWidth(5, 18);
     sheet.setColumnWidth(6, 18);
 
-    final nombre = registros.isNotEmpty ? registros.first.nombres : '';
-    final ci = registros.isNotEmpty ? registros.first.ci : '';
+    final nombre = solo.isNotEmpty ? solo.first.nombres : '';
+    final ci = solo.isNotEmpty ? solo.first.ci : '';
 
     final headerStyle = CellStyle(
       bold: true,
@@ -195,20 +199,21 @@ class ExportService {
     }
     row++;
 
-    final agrupados = _agrupar(registros);
+    final agrupados = _agruparAnios(solo);
     final anios = agrupados.keys.toList()..sort();
 
     for (final anio in anios) {
-      final meses = agrupados[anio]!.keys.toList()..sort();
-      for (final mes in meses) {
-        final r = agrupados[anio]![mes]!;
+      final movs = agrupados[anio]!
+        ..sort((a, b) => a.mes - b.mes);
+      for (var i = 0; i < movs.length; i++) {
+        final r = movs[i];
         _setDataCell(sheet, 0, row, '$anio', dataStyle);
-        _setDataCell(sheet, 1, row, RegistroExtraido.nombreMes(mes), dataStyle);
+        _setDataCell(sheet, 1, row, RegistroExtraido.nombreMes(r.mes), dataStyle);
         _setDataCell(sheet, 2, row, _fmtNum(r.totalGanado), dataStyle);
         _setDataCell(sheet, 3, row, _fmtNum(r.aportesAfp), dataStyle);
         _setDataCell(sheet, 4, row, _fmtNum(r.liquidoPagable), dataStyle);
         _setDataCell(sheet, 5, row, '${r.diasTrabajados}', dataStyle);
-        if (mes == meses.last) {
+        if (i == movs.length - 1) {
           _setDataCell(sheet, 6, row, 'Tot GES $anio', boldStyle);
         }
         row++;
@@ -248,7 +253,7 @@ class ExportService {
     }
     row++;
 
-    final resumen = calcularResumenAportes(registros);
+    final resumen = calcularResumenAportes(solo);
 
     for (final item in resumen.anios) {
       _setDataCell(sheet, 0, row, '${item.anio}', dataStyle);
@@ -469,6 +474,16 @@ class ExportService {
       aniosCompletos: totalCotizaciones ~/ 12,
       mesesResiduales: totalCotizaciones % 12,
     );
+  }
+
+  static Map<int, List<RegistroExtraido>> _agruparAnios(
+    List<RegistroExtraido> registros,
+  ) {
+    final Map<int, List<RegistroExtraido>> resultado = {};
+    for (final r in registros) {
+      resultado.putIfAbsent(r.anio, () => []).add(r);
+    }
+    return resultado;
   }
 
   static Map<int, Map<int, RegistroExtraido>> _agrupar(
