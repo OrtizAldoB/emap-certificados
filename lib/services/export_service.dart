@@ -22,6 +22,11 @@ class ResumenAnualAportes {
     required this.cotizaciones,
     required this.diasPendientes,
   });
+  static String _fechaActual() {
+    final d = DateTime.now();
+    return '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
+  }
+
 }
 
 class ResumenCertificadoAportes {
@@ -69,7 +74,7 @@ class ExportService {
     List<RegistroExtraido> registros,
   ) async {
     final excel = _buildExcel(registros);
-    return _agregarLogos(excel.encode() ?? <int>[]);
+    return excel.encode() ?? <int>[];
   }
 
   static Excel _buildExcel(List<RegistroExtraido> registros) {
@@ -156,7 +161,7 @@ class ExportService {
 
     int row = 1;
 
-    _set(sheet, 0, row, 'EMAP/RR.HH./${DateTime.now().year}', bold: true);
+    _set(sheet, 0, row, 'EMAP / RR.HH. / ${_fechaActual()}', bold: true);
     row += 2;
 
     sheet.merge(
@@ -824,6 +829,11 @@ class ExportService {
     );
     cell.value = TextCellValue(text);
     cell.cellStyle = style;
+  }
+
+  static String _fechaActual() {
+    final d = DateTime.now();
+    return '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
   }
 
   static String _sufijoArchivo() {
